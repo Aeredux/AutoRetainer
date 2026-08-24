@@ -262,6 +262,27 @@ internal unsafe class RetainerListOverlay : Window
                 }
             }
 
+            {
+                ImGui.SameLine();
+                if(ImGuiEx.IconButton($"{FontAwesomeIcon.Store.ToIconString()}##marketrestock"))
+                {
+                    EnqueueMarketRestockByRetainer(false);
+                }
+                if(ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                {
+                    ImGui.OpenPopup("QuickMarketRestockPopup");
+                }
+                ImGuiEx.Tooltip("Quick Market Restock");
+                if(ImGui.BeginPopup("QuickMarketRestockPopup"))
+                {
+                    if(ImGui.Selectable("Run market restock for first configured retainer"))
+                    {
+                        EnqueueMarketRestockByRetainer(true);
+                    }
+                    ImGui.EndPopup();
+                }
+            }
+
             PluginToProcess = null;
             Svc.PluginInterface.GetIpcProvider<object>(ApiConsts.OnRetainerListTaskButtonsDraw).SendMessage();
             if(PluginToProcess != null)
@@ -285,6 +306,40 @@ internal unsafe class RetainerListOverlay : Window
             }
         }
         height = ImGui.GetWindowSize().Y;
+    }
+
+    private static void EnqueueMarketRestockByRetainer(bool firstOnly)
+    {
+        var enqueued = 0;
+        for(var i = 0; i < GameRetainerManager.Count; i++)
+        {
+            var ret = GameRetainerManager.Retainers[i];
+            if(!ret.Available) continue;
+
+            var adata = Utils.GetAdditionalData(Data.CID, ret.Name.ToString());
+            if(!adata.EnableMarketAutoRestock || adata.MarketRestockRules.Count == 0) continue;
+
+            P.TaskManager.Enqueue(() => RetainerListHandlers.SelectRetainerByName(ret.Name.ToString()));
+            TaskRestockMarketListings.Enqueue(adata);
+            if(C.RetainerMenuDelay > 0)
+            {
+                TaskWaitSelectString.Enqueue(C.RetainerMenuDelay);
+            }
+            P.TaskManager.Enqueue(RetainerHandlers.SelectQuit);
+            P.TaskManager.Enqueue(RetainerHandlers.ConfirmCantBuyback);
+
+            enqueued++;
+            if(firstOnly) break;
+        }
+
+        if(enqueued == 0)
+        {
+            Notify.Warning("No retainers have Market Auto Restock enabled.");
+        }
+        else
+        {
+            Notify.Success($"Queued market restock for {enqueued} retainer(s).");
+        }
     }
 
     public override void PostDraw()

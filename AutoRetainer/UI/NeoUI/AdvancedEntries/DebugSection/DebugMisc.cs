@@ -236,6 +236,69 @@ internal unsafe class DebugMisc : DebugSectionBase
         if(ImGui.CollapsingHeader("Task debug"))
         {
             ImGuiEx.Text($"Busy: {P.TaskManager.IsBusy}, abort in {P.TaskManager.RemainingTimeMS}");
+            if(ImGui.CollapsingHeader("Market Restock Experimental"))
+            {
+                var state = TaskRestockMarketListings.GetExperimentalDebugState();
+                ImGuiEx.Text($"Injection feature compiled: {state.InjectionFeatureCompiled}");
+                ImGuiEx.Text($"Follow-up close pulse compiled: {state.FollowUpClosePulseCompiled}");
+                ImGuiEx.Text($"Guarded confirm feature compiled: {state.GuardedConfirmFeatureCompiled}");
+                var runtimeGuardedConfirm = state.GuardedConfirmRuntimeEnabled;
+                if(ImGui.Checkbox("Enable guarded confirm runtime experimental mode", ref runtimeGuardedConfirm))
+                {
+                    TaskRestockMarketListings.SetExperimentalGuardedConfirmRuntimeEnabled(runtimeGuardedConfirm);
+                }
+                ImGuiEx.Text($"Guarded confirm effective enabled: {state.GuardedConfirmEffectiveEnabled}");
+                ImGuiEx.Text($"Guarded confirm one-shot armed: {state.GuardedConfirmOneShotArmed}");
+                if(ImGui.Button("Arm guarded confirm for next listing (one-shot)"))
+                {
+                    TaskRestockMarketListings.ArmExperimentalGuardedConfirmOneShot();
+                }
+                if(ImGui.Button("Disarm guarded confirm one-shot"))
+                {
+                    TaskRestockMarketListings.DisarmExperimentalGuardedConfirmOneShot();
+                }
+                ImGuiEx.Text($"Guarded confirm blocked by plugin conflict: {state.GuardedConfirmBlockedByPlugin}");
+                ImGuiEx.Text($"Pending type-136 RetainerMarket ops: {state.PendingType136RetainerMarketOps}");
+                ImGuiEx.Text($"Session disabled: {state.DisabledForSession}");
+                ImGuiEx.Text($"Guarded confirm session disabled: {state.GuardedConfirmDisabledForSession}");
+                ImGuiEx.Text($"Awaiting ack: {state.AwaitingAck}");
+                ImGuiEx.Text($"Guarded confirm awaiting ack: {state.GuardedConfirmAwaitingAck}");
+                ImGuiEx.Text($"Injected this listing: {state.InjectedThisListing}");
+                ImGuiEx.Text($"Guarded confirm clicked this listing: {state.GuardedConfirmClickedThisListing}");
+                ImGuiEx.Text($"ContextId: {state.ContextId}");
+                ImGuiEx.Text($"Guarded confirm contextId: {state.GuardedConfirmContextId}");
+                ImGuiEx.Text($"Ack timeout remaining (ms): {state.AckTimeoutInMs}");
+                ImGuiEx.Text($"Guarded confirm ack timeout remaining (ms): {state.GuardedConfirmAckTimeoutInMs}");
+
+                ImGui.Separator();
+                ImGuiEx.Text("RetainerSell Confirm Probe");
+                ImGuiEx.Text($"RetainerSell open: {TaskRestockMarketListings.IsRetainerSellOpenForDebug()}");
+                if(ImGui.Button("Probe 1: AddonMaster Confirm()"))
+                {
+                    TaskRestockMarketListings.TryDebugRetainerSellConfirmDispatch(1);
+                }
+                if(ImGui.Button("Probe 2: Callback(0)"))
+                {
+                    TaskRestockMarketListings.TryDebugRetainerSellConfirmDispatch(2);
+                }
+                if(ImGui.Button("Probe 3: Callback(1)"))
+                {
+                    TaskRestockMarketListings.TryDebugRetainerSellConfirmDispatch(3);
+                }
+                if(ImGui.Button("Probe 4: Callback(0, 0u)"))
+                {
+                    TaskRestockMarketListings.TryDebugRetainerSellConfirmDispatch(4);
+                }
+                if(ImGui.Button("Probe 5: Callback(1, 0u)"))
+                {
+                    TaskRestockMarketListings.TryDebugRetainerSellConfirmDispatch(5);
+                }
+
+                if(ImGui.Button("Reset market restock experimental session lock"))
+                {
+                    TaskRestockMarketListings.ResetExperimentalSessionSafetyLock();
+                }
+            }
             if(ImGui.Button($"Generate random numbers 1/500"))
             {
                 P.TaskManager.Enqueue(() => { var r = new Random().Next(0, 500); InternalLog.Verbose($"Gen 1/500: {r}"); return r == 0; });

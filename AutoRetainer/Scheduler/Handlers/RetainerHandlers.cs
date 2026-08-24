@@ -197,6 +197,13 @@ internal static unsafe class RetainerHandlers
         return Utils.TrySelectSpecificEntry(text);
     }
 
+    internal static bool? SelectPutUpForSale()
+    {
+        //99 Put Up for Sale
+        var text = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Addon>().GetRow(99).Text.ToDalamudString().GetText(true);
+        return Utils.TrySelectSpecificEntry(text);
+    }
+
     internal static bool? SelectEntrustGil()
     {
         //2379	Entrust or withdraw gil.

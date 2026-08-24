@@ -6,7 +6,7 @@
 	url = https://github.com/NightmareXIV/ECommons
 [submodule "AutoRetainerAPI"]
 	path = AutoRetainerAPI
-	url = https://github.com/PunishXIV/AutoRetainerAPI
+	url = https://github.com/Aeredux/AutoRetainerAPI.git
 [submodule "NightmareUI"]
 	path = NightmareUI
 	url = https://github.com/NightmareXIV/NightmareUI

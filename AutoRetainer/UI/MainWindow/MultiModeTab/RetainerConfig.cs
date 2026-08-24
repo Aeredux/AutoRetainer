@@ -1,5 +1,7 @@
 ﻿using AutoRetainerAPI;
 using AutoRetainerAPI.Configuration;
+using ECommons.ExcelServices;
+using System;
 
 namespace AutoRetainer.UI.MainWindow.MultiModeTab;
 public static unsafe class RetainerConfig
@@ -97,6 +99,90 @@ public static unsafe class RetainerConfig
             if(ImGui.RadioButton("Deposit", adata.Deposit)) adata.Deposit = true;
             ImGuiEx.SetNextItemWidthScaled(200f);
             ImGui.InputInt($"Amount, %", ref adata.WithdrawGilPercent.ValidateRange(1, 100), 1, 10);
+        }
+
+        ImGui.Separator();
+        ImGuiEx.TextV("Market Auto Restock:");
+        ImGui.Checkbox("Enable market auto restock", ref adata.EnableMarketAutoRestock);
+        if(adata.EnableMarketAutoRestock)
+        {
+            ImGui.Checkbox("Dry run", ref adata.MarketAutoRestockDryRun);
+            ImGui.SameLine();
+            ImGui.Checkbox("Auto confirm listing", ref adata.MarketAutoRestockAutoConfirm);
+            ImGuiEx.SetNextItemWidthScaled(200f);
+            ImGui.InputInt("Max listings per visit", ref adata.MarketAutoRestockMaxListingsPerVisit.ValidateRange(1, 100), 1, 5);
+
+            for(var i = 0; i < adata.MarketRestockRules.Count; i++)
+            {
+                var rule = adata.MarketRestockRules[i];
+                ImGui.PushID($"MarketRule{i}");
+                ImGui.Separator();
+                ImGui.Checkbox("Enabled", ref rule.Enabled);
+                ImGui.SameLine();
+                if(ImGuiEx.IconButton(FontAwesomeIcon.Trash))
+                {
+                    adata.MarketRestockRules.RemoveAt(i);
+                    ImGui.PopID();
+                    break;
+                }
+
+                var itemId = (int)rule.ItemId;
+                ImGui.SetNextItemWidth(180f);
+                ImGui.InputInt("Item ID", ref itemId, 0, 0);
+                rule.ItemId = (uint)Math.Max(0, itemId);
+
+                var fixedPrice = (int)rule.FixedPrice;
+                ImGui.SetNextItemWidth(180f);
+                ImGui.InputInt("Fixed Price", ref fixedPrice.ValidateRange(1, int.MaxValue), 100, 1000);
+                rule.FixedPrice = (uint)Math.Max(1, fixedPrice);
+
+                if(rule.ItemId > 0)
+                {
+                    ImGuiEx.Text($"Item: {ExcelItemHelper.GetName(rule.ItemId)}");
+                }
+
+                ImGuiEx.Text("Stack Targets");
+                for(var s = 0; s < rule.StackTargets.Count; s++)
+                {
+                    var stack = rule.StackTargets[s];
+                    ImGui.PushID($"Stack{s}");
+                    ImGui.SetNextItemWidth(120f);
+                    ImGui.InputInt("Qty", ref stack.Quantity.ValidateRange(1, 999), 1, 5);
+                    ImGui.SameLine();
+                    ImGui.SetNextItemWidth(120f);
+                    ImGui.InputInt("Listings", ref stack.DesiredListings.ValidateRange(1, 20), 1, 2);
+                    ImGui.SameLine();
+                    if(ImGuiEx.IconButton(FontAwesomeIcon.Trash))
+                    {
+                        rule.StackTargets.RemoveAt(s);
+                        ImGui.PopID();
+                        break;
+                    }
+                    ImGui.PopID();
+                }
+
+                if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Plus, "Add Stack Target"))
+                {
+                    rule.StackTargets.Add(new()
+                    {
+                        Quantity = 1,
+                        DesiredListings = 1,
+                    });
+                }
+
+                ImGui.PopID();
+            }
+
+            if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Plus, "Add Restock Rule"))
+            {
+                adata.MarketRestockRules.Add(new()
+                {
+                    Enabled = true,
+                    ItemId = 0,
+                    FixedPrice = 1,
+                    StackTargets = [new() { Quantity = 1, DesiredListings = 1 }],
+                });
+            }
         }
         ImGui.Separator();
         Svc.PluginInterface.GetIpcProvider<ulong, string, object>(ApiConsts.OnRetainerSettingsDraw).SendMessage(data.CID, ret.Name);

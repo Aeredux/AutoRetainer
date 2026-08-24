@@ -184,6 +184,11 @@ internal static unsafe class SchedulerMain
                                         }
                                     }
 
+                                    if(adata.EnableMarketAutoRestock)
+                                    {
+                                        TaskRestockMarketListings.Enqueue(adata);
+                                    }
+
                                     if(Data.GetIMSettings().IMEnableAutoVendor)
                                     {
                                         TaskVendorItems.Enqueue();

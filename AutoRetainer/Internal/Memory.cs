@@ -14,6 +14,7 @@ namespace AutoRetainer.Internal;
 internal unsafe class Memory : IDisposable
 {
     internal int LastSearchItem = -1;
+    internal volatile bool LogRetainerItemCommandsVerbose;
 
     private delegate ulong InteractWithObjectDelegate(TargetSystem* system, GameObject* obj, bool los);
 
@@ -54,7 +55,15 @@ internal unsafe class Memory : IDisposable
     {
         try
         {
-            DebugLog($"RetainerItemCommandDetour: {AgentRetainerItemCommandModule:X16}, slot={slot}, type={inventoryType}, a4={a4}, command={command}");
+            var message = $"RetainerItemCommandDetour: {AgentRetainerItemCommandModule:X16}, slot={slot}, type={inventoryType}, a4={a4}, command={command}";
+            if(LogRetainerItemCommandsVerbose)
+            {
+                PluginLog.Information($"[MarketRestock] {message}");
+            }
+            else
+            {
+                DebugLog(message);
+            }
         }
         catch(Exception e)
         {
